@@ -1,6 +1,6 @@
 [project]
 name = "get_hc_secrets"
-dynamic = ["version"]
+version = '1.5.6'
 authors = [
     { name = "Xavier Mayeur", email = "xavier@mayeur.be" }
 ]
