@@ -1,17 +1,19 @@
 # getSecrets package
 
-getSecrets is a simple package that reads from the 'secret' repository of a Hashicorp vault
+getSecrets is a simple package that reads from the given engine ('secret' by default) of a Hashicorp vault
 
 usage:
 
 ```
-from get_secrets import get_secret
+from get_secrets import *
 
-data = get_secret(<id>)
+data = get_secret(<id>, [<secret>])
+
+usr_pwd = get_user_pwd(<id>, <new k_v_dict> , [<secret>])
+
+list = list_secret([<secret>]
+
 ```
-
-If the secret is a single key/value pair, data is a type tuple(key, value)
-else, data is a dictionary
 
 Vault parameters are stored in a config file ~/.config/.vault/.vault.yml
 

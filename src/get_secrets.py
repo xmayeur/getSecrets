@@ -12,16 +12,45 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p')
 
 
-def get_secret(id: str):
+def get_secret(id: str, repo: str = 'secret') -> dict:
     """
     :param id: The ID of the secret to retrieve
-    :return: A tuple containing the key-value pairs of the secret or a json object for complex secrets
-             or (None, None) if the secret retrieval fails
+    :param repo: The name of the secrets repository to retrieve the secret from - defaults to 'secret'
+    :return: a json object with key/value pairs
+             or an empty object if the secret retrieval fails
 
-    This method retrieves a secret from a Vault server using the provided ID. I
-    t sends a GET request to the Vault server with the necessary headers and authentication token.
-    If the request is successful (status code 200), the method extracts the key-value pairs
-    from the response JSON and returns them as a tuple.
+    This method retrieves a secret from a Vault server using the provided ID.
+    If the request is successful (status code 200), the method extracts the key-value pairs JSON object.
+    If the request fails, the method logs an HTTP error message and returns a n empty json {}.
+    """
+
+    base_url = _config['vault']['vault_addr']
+    certs = join(_home, _config['vault']['certs'].replace("~/", ''))
+    token = _config['vault']['token']
+
+    headers = {"X-Vault-Token": token}
+    uri = f"/v1/{repo}/data/"
+    url = f"{base_url}{uri}{id}"
+    resp = requests.get(url, headers=headers, verify=certs)
+    if resp.status_code == 200:
+        secret = resp.json()["data"]["data"]
+        return secret
+
+    else:
+        print(f"http error {resp.status_code}")
+        logging.error(f"Vault api error {resp}")
+        return {}
+
+
+def get_user_pwd(id: str, repo: str = 'secret') -> tuple:
+    """
+    :param id: The ID of the secret to retrieve
+    :param repo: The name of the secret repository to retrieve the seret from - defaults to 'secret'
+    :return: a tuple username, password values if the secrets has such keys, else None, None
+
+    This method retrieves a secret from a Vault server using the provided ID.
+    If the request is successful (status code 200), the method extracts the  username and password key value
+    if such keys exist.
     If the request fails, the method prints an HTTP error message and returns (None, None).
     """
 
@@ -30,16 +59,76 @@ def get_secret(id: str):
     token = _config['vault']['token']
 
     headers = {"X-Vault-Token": token}
-    uri = "/v1/secret/data/"
+    uri = f"/v1/{repo}/data/"
     url = f"{base_url}{uri}{id}"
     resp = requests.get(url, headers=headers, verify=certs)
     if resp.status_code == 200:
         secret = resp.json()["data"]["data"]
-        if len(secret.values()) == 1:
-            for k, v in secret.items():
-                return k, v
+        if 'username' in secret and 'password' in secret:
+            return secret['username'], secret['password']
         else:
-            return secret
+            return None, None
+
+    else:
+        print(f"http error {resp.status_code}")
+        logging.error(f"Vault api error {resp}")
+        return None, None
+
+
+def list_secret(repo: str = 'secret'):
+    """
+    :param repo: The name of a secret repository to retrieve the secret from - defaults to 'secret'
+    :return: A list containing all items keys from the repository
+
+    """
+
+    base_url = _config['vault']['vault_addr']
+    certs = join(_home, _config['vault']['certs'].replace("~/", ''))
+    token = _config['vault']['token']
+
+    headers = {"X-Vault-Token": token}
+    uri = f"/v1/{repo}/metadata"
+    url = f"{base_url}{uri}"
+    resp = requests.request('LIST', url, headers=headers, verify=certs)
+    if resp.status_code == 200:
+        return resp.json()["data"]["keys"]
+
+    else:
+        print(f"http error {resp.status_code}")
+        logging.error(f"Vault api error {resp}")
+        return None, None
+
+
+def upd_secret(id: str, data, repo: str = 'secret'):
+    """
+    :param id: The ID of the secret to retrieve
+    :param data: The data to be uploaded in place of the exitisting one
+    :param repo: The name of the repository to retrieve the secret from - defaults to 'secret'
+    :return: the response status code from the vault - 200 if successful.
+
+    """
+
+    base_url = _config['vault']['vault_addr']
+    certs = join(_home, _config['vault']['certs'].replace("~/", ''))
+    token = _config['vault']['token']
+
+    headers = {"X-Vault-Token": token}
+    uri = f"/v1/{repo}/data/"
+    url = f"{base_url}{uri}{id}"
+    resp = requests.request('GET', url, headers=headers, verify=certs)
+    if resp.status_code == 200:
+        version = resp.json()["data"]['metadata']['version']
+        obj = {
+            "options": {
+                "cas": version
+            },
+            "data": data
+        }
+
+        resp2 = requests.request('POST', url, headers=headers, json=obj, verify=certs)
+        if resp2.status_code != 200:
+            logging.warning(f"Vault update error for {id} with new {data}")
+        return resp2.status_code
 
     else:
         print(f"http error {resp.status_code}")
