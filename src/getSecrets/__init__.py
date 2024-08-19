@@ -15,7 +15,7 @@ _home = getenv("HOME")
 
 try:
     _config = yaml.safe_load(open(join(_home, _config_file.replace("~/", ''))))
-except FileNotFoundError:
+except (FileNotFoundError, TypeError):
     if not os.path.exists("/etc/vault"):
         os.makedirs("/etc/vault")
     _home = "/etc/vault"
