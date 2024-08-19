@@ -1,15 +1,29 @@
 import logging
+import os
+import sys
 from os import getenv
 from os.path import join
 
 import requests
 import yaml
 
-_config_file = "~/.config/.vault/vault.yml"
-_home = getenv("HOME")
-_config = yaml.safe_load(open(join(_home, _config_file.replace("~/", ''))))
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p')
+
+_config_file = "~/.config/.vault/vault.yml"
+_home = getenv("HOME")
+
+try:
+    _config = yaml.safe_load(open(join(_home, _config_file.replace("~/", ''))))
+except FileNotFoundError:
+    if not os.path.exists("/etc/vault"):
+        os.makedirs("/etc/vault")
+    _home = "/etc/vault"
+    try:
+        _config = yaml.safe_load(open(join(_home, 'vault.yml')))
+    except FileNotFoundError:
+        logging.error(f"No vault configuration found in {_home}")
+        sys.exit(1)
 
 
 def get_secret(id: str, repo: str = 'secret') -> dict:
@@ -25,9 +39,12 @@ def get_secret(id: str, repo: str = 'secret') -> dict:
     """
 
     base_url = _config['vault']['vault_addr']
-    certs = join(_home, _config['vault']['certs'].replace("~/", ''))
-    token = _config['vault']['token']
+    if _home == '/etc/vault':
+        certs = '/etc/vault/bundle.pem'
+    else:
+        certs = join(_home, _config['vault']['certs'].replace("~/", ''))
 
+    token = _config['vault']['token']
     headers = {"X-Vault-Token": token}
     uri = f"/v1/{repo}/data/"
     url = f"{base_url}{uri}{id}"

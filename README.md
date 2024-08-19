@@ -5,7 +5,7 @@ getSecrets is a simple package that reads from the given engine ('secret' by def
 usage:
 
 ```
-from get_secrets import *
+from getSecrets import *
 
 data = get_secret(<id>, [<secret>])
 
