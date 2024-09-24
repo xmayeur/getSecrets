@@ -5,6 +5,7 @@ from os import getenv
 from os.path import join
 
 import requests
+import urllib3
 import yaml
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
@@ -43,8 +44,12 @@ def get_secret(id: str, repo: str = 'secret') -> dict:
         certs = '/etc/vault/bundle.pem'
     else:
         certs = join(_home, _config['vault']['certs'].replace("~/", ''))
-    # certs = False
-    # urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    # check if file exist, else make insecure
+    if not (os.path.exists(certs)):
+        certs = False
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        logging.warning(f"No vault bundle.pem found at {certs} - working insecure !!")
+
     token = _config['vault']['token']
     headers = {"X-Vault-Token": token}
     uri = f"/v1/{repo}/data/"
