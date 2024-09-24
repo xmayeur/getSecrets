@@ -43,7 +43,8 @@ def get_secret(id: str, repo: str = 'secret') -> dict:
         certs = '/etc/vault/bundle.pem'
     else:
         certs = join(_home, _config['vault']['certs'].replace("~/", ''))
-
+    # certs = False
+    # urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     token = _config['vault']['token']
     headers = {"X-Vault-Token": token}
     uri = f"/v1/{repo}/data/"
@@ -151,3 +152,7 @@ def upd_secret(id: str, data, repo: str = 'secret'):
         print(f"http error {resp.status_code}")
         logging.error(f"Vault api error {resp}")
         return None, None
+
+
+if __name__ == "__main__":
+    secret = get_secret('test')

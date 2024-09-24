@@ -23,3 +23,10 @@ vault:
   vault_addr: "https://vault:8200"
   certs: "<path>/bundle.pem"
 ```
+
+for reminder:
+bundle.pem, for own certificates, is made of, in this order:
+
+- vault certificate
+- intermediate certificate
+- root certificate
