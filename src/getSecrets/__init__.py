@@ -11,17 +11,18 @@ import yaml
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p')
 
-_config_file = "~/.config/.vault/vault.yml"
+_config_file = ".config/.vault/vault.yml"
 _home = getenv("HOME")
 
 try:
-    _config = yaml.safe_load(open(join(_home, _config_file.replace("~/", ''))))
+    _config = yaml.safe_load(open(join(_home, _config_file)))
 except (FileNotFoundError, TypeError):
     if not os.path.exists("/etc/vault"):
         os.makedirs("/etc/vault")
     _home = "/etc/vault"
+    _config_file = "vault.yml"
     try:
-        _config = yaml.safe_load(open(join(_home, 'vault.yml')))
+        _config = yaml.safe_load(open(join(_home, _config_file)))
     except FileNotFoundError:
         logging.error(f"No vault configuration found in {_home}")
         sys.exit(1)
@@ -39,30 +40,34 @@ def get_secret(id: str, repo: str = 'secret') -> dict:
     If the request fails, the method logs an HTTP error message and returns a n empty json {}.
     """
 
-    base_url = _config['vault']['vault_addr']
-    if _home == '/etc/vault':
-        certs = '/etc/vault/bundle.pem'
+    # check if data is available in config file
+    if id in _config:
+        return _config[id]
     else:
-        certs = join(_home, _config['vault']['certs'].replace("~/", ''))
-    # check if file exist, else make insecure
-    if not (os.path.exists(certs)):
-        certs = False
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-        logging.warning(f"No vault bundle.pem found at {certs} - working insecure !!")
+        base_url = _config['vault']['vault_addr']
+        if _home == '/etc/vault':
+            certs = '/etc/vault/bundle.pem'
+        else:
+            certs = join(_home, _config['vault']['certs'].replace("~/", ''))
+        # check if file exist, else make insecure
+        if not (os.path.exists(certs)):
+            certs = False
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+            logging.warning(f"No vault bundle.pem found at {certs} - working insecure !!")
 
-    token = _config['vault']['token']
-    headers = {"X-Vault-Token": token}
-    uri = f"/v1/{repo}/data/"
-    url = f"{base_url}{uri}{id}"
-    resp = requests.get(url, headers=headers, verify=certs)
-    if resp.status_code == 200:
-        secret = resp.json()["data"]["data"]
-        return secret
+        token = _config['vault']['token']
+        headers = {"X-Vault-Token": token}
+        uri = f"/v1/{repo}/data/"
+        url = f"{base_url}{uri}{id}"
+        resp = requests.get(url, headers=headers, verify=certs)
+        if resp.status_code == 200:
+            secret = resp.json()["data"]["data"]
+            return secret
 
-    else:
-        print(f"http error {resp.status_code}")
-        logging.error(f"Vault api error {resp}")
-        return {}
+        else:
+            print(f"http error {resp.status_code}")
+            logging.error(f"Vault api error {resp}")
+            return {}
 
 
 def get_user_pwd(id: str, repo: str = 'secret') -> tuple:
@@ -77,25 +82,29 @@ def get_user_pwd(id: str, repo: str = 'secret') -> tuple:
     If the request fails, the method prints an HTTP error message and returns (None, None).
     """
 
-    base_url = _config['vault']['vault_addr']
-    certs = join(_home, _config['vault']['certs'].replace("~/", ''))
-    token = _config['vault']['token']
-
-    headers = {"X-Vault-Token": token}
-    uri = f"/v1/{repo}/data/"
-    url = f"{base_url}{uri}{id}"
-    resp = requests.get(url, headers=headers, verify=certs)
-    if resp.status_code == 200:
-        secret = resp.json()["data"]["data"]
-        if 'username' in secret and 'password' in secret:
-            return secret['username'], secret['password']
-        else:
-            return None, None
-
+    # check if data is available in config file
+    if id in _config:
+        return _config[id]['username'], _config[id]['password']
     else:
-        print(f"http error {resp.status_code}")
-        logging.error(f"Vault api error {resp}")
-        return None, None
+        base_url = _config['vault']['vault_addr']
+        certs = join(_home, _config['vault']['certs'].replace("~/", ''))
+        token = _config['vault']['token']
+
+        headers = {"X-Vault-Token": token}
+        uri = f"/v1/{repo}/data/"
+        url = f"{base_url}{uri}{id}"
+        resp = requests.get(url, headers=headers, verify=certs)
+        if resp.status_code == 200:
+            secret = resp.json()["data"]["data"]
+            if 'username' in secret and 'password' in secret:
+                return secret['username'], secret['password']
+            else:
+                return None, None
+
+        else:
+            print(f"http error {resp.status_code}")
+            logging.error(f"Vault api error {resp}")
+            return None, None
 
 
 def list_secret(repo: str = 'secret'):
@@ -131,32 +140,39 @@ def upd_secret(id: str, data, repo: str = 'secret'):
 
     """
 
-    base_url = _config['vault']['vault_addr']
-    certs = join(_home, _config['vault']['certs'].replace("~/", ''))
-    token = _config['vault']['token']
-
-    headers = {"X-Vault-Token": token}
-    uri = f"/v1/{repo}/data/"
-    url = f"{base_url}{uri}{id}"
-    resp = requests.request('GET', url, headers=headers, verify=certs)
-    if resp.status_code == 200:
-        version = resp.json()["data"]['metadata']['version']
-        obj = {
-            "options": {
-                "cas": version
-            },
-            "data": data
-        }
-
-        resp2 = requests.request('POST', url, headers=headers, json=obj, verify=certs)
-        if resp2.status_code != 200:
-            logging.warning(f"Vault update error for {id} with new {data}")
-        return resp2.status_code
+    # check if data is available in config file
+    if id in _config:
+        _config[id] = data
+        yaml.safe_dump(data, open(join(_home, _config_file)))
+        return 200
 
     else:
-        print(f"http error {resp.status_code}")
-        logging.error(f"Vault api error {resp}")
-        return None, None
+        base_url = _config['vault']['vault_addr']
+        certs = join(_home, _config['vault']['certs'].replace("~/", ''))
+        token = _config['vault']['token']
+
+        headers = {"X-Vault-Token": token}
+        uri = f"/v1/{repo}/data/"
+        url = f"{base_url}{uri}{id}"
+        resp = requests.request('GET', url, headers=headers, verify=certs)
+        if resp.status_code == 200:
+            version = resp.json()["data"]['metadata']['version']
+            obj = {
+                "options": {
+                    "cas": version
+                },
+                "data": data
+            }
+
+            resp2 = requests.request('POST', url, headers=headers, json=obj, verify=certs)
+            if resp2.status_code != 200:
+                logging.warning(f"Vault update error for {id} with new {data}")
+            return resp2.status_code
+
+        else:
+            print(f"http error {resp.status_code}")
+            logging.error(f"Vault api error {resp}")
+            return None, None
 
 
 if __name__ == "__main__":
