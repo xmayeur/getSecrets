@@ -1,6 +1,7 @@
 import unittest
 
-import getSecrets as gs
+# import getSecrets as gs
+from src import getSecrets as gs
 
 
 class TestGetSecrets(unittest.TestCase):
