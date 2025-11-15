@@ -1,3 +1,7 @@
-rm -fr dist
-python3 -m build
-python3 -m twine upload  dist/*
+#!/bin/sh
+
+if [ -d ./dist ] ; then
+  rm -fr dist
+fi
+python -m build
+python -m twine upload  dist/*

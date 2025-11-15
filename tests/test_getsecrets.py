@@ -11,9 +11,13 @@ class TestGetSecrets(unittest.TestCase):
         self.assertTrue('test' in secrets)
 
     def test_getsecrets(self):
+
+        secret = gs.get_secret('test')
+        secret['test'] = 'test1'
+        gs.upd_secret('test', secret)
         secret = gs.get_secret('test')
         self.assertTrue('test' in secret)
-        self.assertEqual(secret['test'], 'test')
+        self.assertEqual(secret['test'], 'test1')
 
     def test_usr_pwd(self):
         usr, pwd = gs.get_user_pwd('test')
