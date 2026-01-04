@@ -1,5 +1,7 @@
 import logging
 import os
+import re
+import socket
 import sys
 from os import getenv
 from os.path import join
@@ -7,6 +9,7 @@ from os.path import join
 import requests
 import urllib3
 import yaml
+from certifi import where
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -49,6 +52,10 @@ def get_secret(id: str, repo: str = 'secret') -> dict:
             certs = '/etc/vault/bundle.pem'
         else:
             certs = join(_home, _config['vault']['certs'].replace("~/", ''))
+        hostname = re.sub(r'https://(.*?)[:/?].*', r'\1', base_url)
+        ip = socket.gethostbyname(hostname)
+        if '192.168.' not in ip:
+            certs = where()
         # check if file exist, else make insecure
         if not (os.path.exists(certs)):
             certs = False
