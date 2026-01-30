@@ -1,8 +1,8 @@
 import logging
 import os
-import re
 import socket
 import sys
+import urllib.parse
 from os import getenv
 from os.path import join
 
@@ -52,7 +52,8 @@ def get_secret(id: str, repo: str = 'secret') -> dict:
             certs = '/etc/vault/bundle.pem'
         else:
             certs = join(_home, _config['vault']['certs'].replace("~/", ''))
-        hostname = re.sub(r'https://(.*?)[:/?].*', r'\1', base_url)
+        parsed_url = urllib.parse.urlparse(base_url)
+        hostname = parsed_url.netloc.split(':')[0]
         ip = socket.gethostbyname(hostname)
         if '192.168.' not in ip:
             certs = where()
