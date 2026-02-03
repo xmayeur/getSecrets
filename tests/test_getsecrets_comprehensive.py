@@ -139,7 +139,8 @@ class TestGetUserPwd(unittest.TestCase):
 
     @patch('src.getSecrets.requests.get')
     @patch('src.getSecrets.os.path.exists', return_value=True)
-    def test_get_user_pwd_from_vault(self, mock_exists, mock_get):
+    @patch('src.getSecrets.socket.gethostbyname', return_value='192.168.1.10')
+    def test_get_user_pwd_from_vault(self, mock_gethostbyname, mock_exists, mock_get):
         """Test username/password retrieval from Vault"""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -170,7 +171,8 @@ class TestGetUserPwd(unittest.TestCase):
 
     @patch('src.getSecrets.requests.get')
     @patch('src.getSecrets.os.path.exists', return_value=True)
-    def test_get_user_pwd_missing_fields(self, mock_exists, mock_get):
+    @patch('src.getSecrets.socket.gethostbyname', return_value='192.168.1.10')
+    def test_get_user_pwd_missing_fields(self, mock_gethostbyname, mock_exists, mock_get):
         """Test when secret doesn't have username/password fields"""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -205,7 +207,8 @@ class TestListSecret(unittest.TestCase):
 
     @patch('src.getSecrets.requests.request')
     @patch('src.getSecrets.os.path.exists', return_value=True)
-    def test_list_secret_success(self, mock_exists, mock_request):
+    @patch('src.getSecrets.socket.gethostbyname', return_value='192.168.1.10')
+    def test_list_secret_success(self, mock_gethostbyname, mock_exists, mock_request):
         """Test successful secret listing"""
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -235,7 +238,8 @@ class TestListSecret(unittest.TestCase):
 
     @patch('src.getSecrets.requests.request')
     @patch('src.getSecrets.os.path.exists', return_value=True)
-    def test_list_secret_error(self, mock_exists, mock_request):
+    @patch('src.getSecrets.socket.gethostbyname', return_value='192.168.1.10')
+    def test_list_secret_error(self, mock_gethostbyname, mock_exists, mock_request):
         """Test secret listing when Vault returns error"""
         mock_response = MagicMock()
         mock_response.status_code = 403
@@ -290,7 +294,8 @@ class TestUpdSecret(unittest.TestCase):
 
     @patch('src.getSecrets.requests.request')
     @patch('src.getSecrets.os.path.exists', return_value=True)
-    def test_upd_secret_vault_success(self, mock_exists, mock_request):
+    @patch('src.getSecrets.socket.gethostbyname', return_value='192.168.1.10')
+    def test_upd_secret_vault_success(self, mock_gethostbyname, mock_exists, mock_request):
         """Test successful secret update in Vault"""
         # Mock GET response (to get version)
         mock_get_response = MagicMock()

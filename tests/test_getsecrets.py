@@ -107,7 +107,7 @@ class TestLocalConfigSecrets(unittest.TestCase):
         try:
             # Attempt to get a secret that might be in local config
             # This will work if the secret exists locally
-            import getSecrets
+
             if hasattr(getSecrets, '_config'):
                 config = getSecrets._config
                 if config and len(config) > 1:  # Has more than just 'vault' key

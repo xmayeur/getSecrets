@@ -31,6 +31,24 @@ except (FileNotFoundError, TypeError):
         sys.exit(1)
 
 
+def get_certs(base_url):
+    if _home == '/etc/vault':
+        certs = '/etc/vault/bundle.pem'
+    else:
+        certs = join(_home, _config['vault']['certs'].replace("~/", ''))
+    parsed_url = urllib.parse.urlparse(base_url)
+    hostname = parsed_url.netloc.split(':')[0]
+    ip = socket.gethostbyname(hostname)
+    if '192.168.' not in ip:
+        certs = where()
+    # check if file exist, else make insecure
+    if not (os.path.exists(certs)):
+        certs = False
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        logging.warning(f"No vault bundle.pem found at {certs} - working insecure !!")
+    return certs
+
+
 def get_secret(id: str, repo: str = 'secret') -> dict:
     """
     :param id: The ID of the secret to retrieve
@@ -48,21 +66,8 @@ def get_secret(id: str, repo: str = 'secret') -> dict:
         return _config[id]
     else:
         base_url = _config['vault']['vault_addr']
-        if _home == '/etc/vault':
-            certs = '/etc/vault/bundle.pem'
-        else:
-            certs = join(_home, _config['vault']['certs'].replace("~/", ''))
-        parsed_url = urllib.parse.urlparse(base_url)
-        hostname = parsed_url.netloc.split(':')[0]
-        ip = socket.gethostbyname(hostname)
-        if '192.168.' not in ip:
-            certs = where()
-        # check if file exist, else make insecure
-        if not (os.path.exists(certs)):
-            certs = False
-            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-            logging.warning(f"No vault bundle.pem found at {certs} - working insecure !!")
 
+        certs = get_certs(base_url)
         token = _config['vault']['token']
         headers = {"X-Vault-Token": token}
         uri = f"/v1/{repo}/data/"
@@ -95,7 +100,7 @@ def get_user_pwd(id: str, repo: str = 'secret') -> tuple:
         return _config[id]['username'], _config[id]['password']
     else:
         base_url = _config['vault']['vault_addr']
-        certs = join(_home, _config['vault']['certs'].replace("~/", ''))
+        certs = get_certs(base_url)
         token = _config['vault']['token']
 
         headers = {"X-Vault-Token": token}
@@ -123,7 +128,7 @@ def list_secret(repo: str = 'secret'):
     """
 
     base_url = _config['vault']['vault_addr']
-    certs = join(_home, _config['vault']['certs'].replace("~/", ''))
+    certs = get_certs(base_url)
     token = _config['vault']['token']
 
     headers = {"X-Vault-Token": token}
@@ -157,7 +162,7 @@ def upd_secret(id: str, data, repo: str = 'secret'):
 
     else:
         base_url = _config['vault']['vault_addr']
-        certs = join(_home, _config['vault']['certs'].replace("~/", ''))
+        certs = get_certs(base_url)
         token = _config['vault']['token']
 
         headers = {"X-Vault-Token": token}
