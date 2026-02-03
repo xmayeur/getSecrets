@@ -307,9 +307,14 @@ Before committing:
 4. ✅ Update CHANGELOG if applicable
 5. ✅ Build docs: `cd docs && make html`
 
+## Copyright
+
+Copyright © 2022-2026 Xavier Mayeur
+
 ## License
 
-[Your License Here]
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation, version 3 of the License
 
 ## Contributing
 
