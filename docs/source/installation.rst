@@ -35,7 +35,7 @@ You can also install the package from source:
 
 .. code-block:: bash
 
-   git clone https://github.com/yourusername/getSecrets.git
+   git clone https://github.com/xmayeur/getSecrets.git
    cd getSecrets
    pip install -e .
 
