@@ -309,7 +309,7 @@ Before committing:
 
 ## Copyright
 
-Copyright © 2022-2026 Xavier Mayeur
+© Copyright 2022-2026 Xavier Mayeur
 
 ## License
 
