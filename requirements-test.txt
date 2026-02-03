@@ -1,0 +1,25 @@
+# Test requirements for getSecrets package
+
+# Testing frameworks
+pytest>=6.2.0
+pytest-cov>=2.12.0
+pytest-mock>=3.6.0
+
+# Mocking and fixtures
+unittest-mock>=1.3.0
+
+# Code coverage
+coverage>=5.5
+
+# Code quality
+flake8>=3.9.0
+pylint>=2.8.0
+
+# Type checking (optional)
+mypy>=0.910
+
+# Package dependencies (for testing)
+requests>=2.25.0
+urllib3>=1.26.0
+PyYAML>=5.4.0
+certifi>=2021.0.0

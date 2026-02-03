@@ -151,8 +151,7 @@ def upd_secret(id: str, data, repo: str = 'secret'):
     # check if data is available in config file
     if id in _config:
         _config[id] = data
-        with open(join(_home, _config_file), 'w') as fd:
-            yaml.safe_dump(_config, fd)
+        yaml.safe_dump(_config, open(join(_home, _config_file), 'w'))
         return 200
 
     else:
