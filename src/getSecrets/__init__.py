@@ -14,12 +14,18 @@ from certifi import where
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p')
 
-_config_file = ".config/.vault/vault.yml"
+if os.name == 'nt':
+    _config_file = "vault.yml"
+else:
+    _config_file = ".config/.vault/vault.yml"
 _home = getenv("HOME")
 
 try:
     _config = yaml.safe_load(open(join(_home, _config_file)))
 except (FileNotFoundError, TypeError):
+    if os.name == 'nt':
+        logging.error("No vault configuration found in %s", _home)
+        sys.exit(1)
     if not os.path.exists("/etc/vault"):
         os.makedirs("/etc/vault")
     _home = "/etc/vault"
