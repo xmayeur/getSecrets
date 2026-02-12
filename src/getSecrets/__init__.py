@@ -1,7 +1,6 @@
 import logging
 import os
 import socket
-import sys
 import urllib.parse
 from os import getenv
 from os.path import join
@@ -14,31 +13,48 @@ from certifi import where
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p')
 
-if os.name == 'nt':
-    _config_file = "vault.yml"
-    _home = getenv("USERPROFILE")
-else:
-    _config_file = ".config/.vault/vault.yml"
-    _home = getenv("HOME")
+_config = None
+_home = None
 
-try:
-    _config = yaml.safe_load(open(join(_home, _config_file)))
-except (FileNotFoundError, TypeError):
+
+def get_home():
+    return getenv("USERPROFILE") if os.name == 'nt' else getenv("HOME")
+
+
+def get_config():
+    global _config, _home
+    _config = {}
     if os.name == 'nt':
-        logging.error("No vault configuration found in %s", _home)
-        sys.exit(1)
-    if not os.path.exists("/etc/vault"):
-        os.makedirs("/etc/vault")
-    _home = "/etc/vault"
-    _config_file = "vault.yml"
+        _config_file = "vault.yml"
+    else:
+        _config_file = ".config/.vault/vault.yml"
+
+    _home = get_home() if _home is None else _home
     try:
         _config = yaml.safe_load(open(join(_home, _config_file)))
-    except FileNotFoundError:
-        logging.error(f"No vault configuration found in {_home}")
-        sys.exit(1)
+    except (FileNotFoundError, TypeError):
+        if os.name == 'nt':
+            logging.error("No vault configuration found in %s", _home)
+            _config = None
+        if not os.path.exists("/etc/vault"):
+            os.makedirs("/etc/vault")
+        _home = "/etc/vault"
+        _config_file = "vault.yml"
+        try:
+            _config = yaml.safe_load(open(join(_home, _config_file)))
+        except FileNotFoundError:
+            logging.error(f"No vault configuration found in {_home}")
+            _config = None
+    finally:
+        if _config:
+            _config['config_file'] = _config_file
+    return _config
 
 
 def get_certs(base_url):
+    global _config, _home
+    _config = get_config() if _config is None else _config
+    _home = get_home() if _home is None else _home
     if _home == '/etc/vault':
         certs = '/etc/vault/bundle.pem'
     else:
@@ -69,6 +85,8 @@ def get_secret(id: str, repo: str = 'secret') -> dict:
     """
 
     # check if data is available in config file
+    global _config
+    _config = get_config() if _config is None else _config
     if id in _config:
         return _config[id]
     else:
@@ -103,6 +121,8 @@ def get_user_pwd(id: str, repo: str = 'secret') -> tuple:
     """
 
     # check if data is available in config file
+    global _config
+    _config = get_config() if _config is None else _config
     if id in _config:
         return _config[id]['username'], _config[id]['password']
     else:
@@ -133,7 +153,8 @@ def list_secret(repo: str = 'secret'):
     :return: A list containing all items keys from the repository
 
     """
-
+    global _config
+    _config = get_config() if _config is None else _config
     base_url = _config['vault']['vault_addr']
     certs = get_certs(base_url)
     token = _config['vault']['token']
@@ -159,11 +180,13 @@ def upd_secret(id: str, data, repo: str = 'secret'):
     :return: the response status code from the vault - 200 if successful.
 
     """
-
+    global _config
+    _config = get_config() if _config is None else _config
+    _home = get_home()
     # check if data is available in config file
     if id in _config:
         _config[id] = data
-        with open(join(_home, _config_file), 'w') as fd:
+        with open(join(_home, _config["config_file"]), 'w') as fd:
             yaml.safe_dump(_config, fd)
         return 200
 
@@ -195,6 +218,3 @@ def upd_secret(id: str, data, repo: str = 'secret'):
             logging.error(f"Vault api error {resp}")
             return None, None
 
-
-if __name__ == "__main__":
-    secret = get_secret('test')

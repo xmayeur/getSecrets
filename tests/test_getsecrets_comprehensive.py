@@ -268,6 +268,7 @@ class TestUpdSecret(unittest.TestCase):
             self.skipTest("PyYAML not installed")
 
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+            temp_file = f.name
             test_config = {
                 'vault': {
                     'vault_addr': 'https://vault.example.com:8200',
@@ -276,19 +277,19 @@ class TestUpdSecret(unittest.TestCase):
                 },
                 'local-secret': {
                     'key1': 'value1'
-                }
+                },
+                'config_file': os.path.basename(temp_file)
             }
             yaml.safe_dump(test_config, f)
-            temp_file = f.name
+
 
         try:
             with patch.object(getSecrets, '_config', test_config):
                 with patch.object(getSecrets, '_home', os.path.dirname(temp_file)):
-                    with patch.object(getSecrets, '_config_file', os.path.basename(temp_file)):
-                        new_data = {'key1': 'updated_value', 'key2': 'new_value'}
-                        status = getSecrets.upd_secret('local-secret', new_data)
+                    new_data = {'key1': 'updated_value', 'key2': 'new_value'}
+                    status = getSecrets.upd_secret('local-secret', new_data)
 
-                        self.assertEqual(status, 200)
+                    self.assertEqual(status, 200)
         finally:
             os.unlink(temp_file)
 

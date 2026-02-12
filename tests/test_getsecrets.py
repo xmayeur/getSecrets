@@ -108,8 +108,8 @@ class TestLocalConfigSecrets(unittest.TestCase):
             # Attempt to get a secret that might be in local config
             # This will work if the secret exists locally
 
-            if hasattr(getSecrets, '_config'):
-                config = getSecrets._config
+            if hasattr(gs, '_config'):
+                config = gs._config
                 if config and len(config) > 1:  # Has more than just 'vault' key
                     # Get first non-vault key
                     local_keys = [k for k in config.keys() if k != 'vault']
