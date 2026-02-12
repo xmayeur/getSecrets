@@ -1,6 +1,6 @@
 [project]
 name = "get_hc_secrets"
-version = '1.5.25'
+version = '1.5.26'
 authors = [
     { name = "Xavier Mayeur", email = "xavier@mayeur.be" }
 ]

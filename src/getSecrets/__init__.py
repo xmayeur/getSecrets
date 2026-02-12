@@ -16,9 +16,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
 
 if os.name == 'nt':
     _config_file = "vault.yml"
+    _home = getenv("USERPROFILE")
 else:
     _config_file = ".config/.vault/vault.yml"
-_home = getenv("HOME")
+    _home = getenv("HOME")
 
 try:
     _config = yaml.safe_load(open(join(_home, _config_file)))
