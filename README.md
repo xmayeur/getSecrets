@@ -276,6 +276,8 @@ or [QUICK_TEST_GUIDE.md](others/QUICK_TEST_GUIDE.md).
 
 ### Building Documentation
 
+[Online documentation](https://getsecrets.readthedocs.io/en/latest/)
+
 To build the documentation locally:
 
 ```bash
